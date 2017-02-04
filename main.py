@@ -8,10 +8,11 @@
 # Note that its only a calculations and practical results may be different as shown in results!
 
 # File created: 29.01.17
-# Last modified: 00.01.17
-# Version: P.4.001-A [P:Prototype, F:Final]
+# Last modified: 04.02.17
+# Version: P.4.001-B [P:Prototype, F:Final]
 
 import os
+import re
 
 PAINTS = {  1:['Temalac SC 50', 61],
             2:['XPP 40003', 41],
@@ -38,13 +39,13 @@ APP_LOSS = {    1:['Closed area, ventilated', 5],
                 3:['Opean area, gentle wind', 20]}
 
 
-def theoretical_yield(s_content, DFT, roughness):
-    t_use = (s_content * 10) / (DFT + roughness)
-    return round(t_use, 2) #m2/dm3
+def theoretical_yield(s_content, dft, roughness):
+    t_use = (s_content * 10) / (dft + roughness)
+    return round(t_use, 2)
 
 def theoretical_coverage(t_use, surplus, app_loss):
     t_coverage = t_use - (t_use * surplus / 100) - (t_use * app_loss / 100)
-    return t_coverage
+    return round(t_coverage, 1)
 
 def prnt_nom_thick():
     key = ''
@@ -98,7 +99,7 @@ def select_surplus():
         counter += 1
     while True:
         key = input('Your choise: ')
-        if key.isdigit() and int(key) in range(1,counter):
+        if key.isdigit() and int(key) in range(1, counter + 1):
             return SURPLUS[int(key)][1]
             break
 
@@ -111,29 +112,67 @@ def select_lost():
         counter += 1
     while True:
         key = input('Your choise: ')
-        if key.isdigit() and int(key) in range(1,counter):
+        if key.isdigit() and int(key) in range(1, counter + 1):
             return APP_LOSS[int(key)][1]
             break
 
-def calculate_WFT(DFT, s_content):
-    wet = (DFT / (s_content / 100)) / (1 + 0.1)
+def calculate_wft(dft, s_content):
+    wet = (dft / (s_content / 100)) / (1 + 0.1)
     return round(wet)
+
+def check_is_number(value):
+    count = 0
+    for s in value:
+        if s.isdigit() or s == '.':
+            if s != '.':
+                if int(s) in range(0,10):
+                    logic = True
+                    continue
+                else:
+                    logic = False
+                    break
+            else:
+                count += 1
+                if count > 1:
+                    logic = False
+                    break
+        else:
+            logic = False
+            break
+    return logic
+
+def get_area():
+    key = ''
+    while True:
+        key = input('Give an area of painting in square meeters [m2]: ')
+        new_key = check_is_number(key)
+        if new_key == True:
+            return float(key)
+            break
+def calculate_paint_usage(area, theor_cover):
+    return round(area / theor_cover, 5)
 
 def main():
     os.system('clear')
     print ('Paint Film Thickness Calculator')
-    DFT = prnt_nom_thick()
+    dft = prnt_nom_thick()
     s_content = select_paint()
     roughness = select_roughness()
-    theor_yield = theoretical_yield(s_content, DFT, roughness)
     surplus = select_surplus()
     lost = select_lost()
+    area = get_area()
+
+    wft = calculate_wft(dft, s_content)
+    theor_yield = theoretical_yield(s_content, dft, roughness)
     theor_cover = theoretical_coverage(theor_yield, surplus, lost)
-    WFT = calculate_WFT(DFT, s_content)
+    paint_usage = calculate_paint_usage(area, theor_cover)
     os.system('clear')
     print ('Summary:')
-    print ('Dry Film Thickness: {0} [um]'.format(DFT))
-    print ('Wet Film Thickness: {0} [um] (with 10% of reducer)'.format(WFT))
+    print ('Dry Film Thickness: {0} [um]'.format(dft))
+    print ('Wet Film Thickness: {0} [um] (with 10% of reducer)'.format(wft))
     print ('Theoretical yield: {0} [m2/dm3]'.format(theor_yield))
-    print ('Calculated coverage: {0} [m2/dm3]'.format(round(theor_cover, 1)))
+    print ('Calculated coverage: {0} [m2/dm3]'.format(theor_cover))
+    print ('Painting area: {0} [m2]'.format(area))
+    print ('Calculated usage of paint: {0} [dm3]'.format(paint_usage))
+
 main()
